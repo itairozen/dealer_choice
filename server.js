@@ -1,34 +1,75 @@
-const { Sequelize, DataTypes } = require('sequelize');
-const faker = require('faker');
-const db = new Sequelize('postgres://localhost/dealers_choice_db');
+const { db, syncAndSeed, models:{Item} } = require('./db');
+const express = require('express');
+const path = require('path');
 
-const Item = db.define('Item', {
-    name: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
-    details: {
-        type: DataTypes.TEXT
+const app = express();
+app.get('/styles.css', (req,res)=> res.sendFile(path.join(__dirname, 'styles.css')));
+app.get('/', (req,res)=> res.redirect('/items'));
+
+app.get('/items', async(req,res,next)=>{
+    try {
+        const items = await Item.findAll();
+        res.send(`
+            <html>
+              <head>
+                <link rel='stylesheet' href='/styles.css' />
+              </head>
+              <body>
+                <h1>Items (${items.length})</h1>
+                <ul>
+                  ${items.map( item => `
+                  <li> 
+                    <a href='/items/${item.id}'>
+                    ${item.name}
+                    </a>
+                  </li>
+                  `).join('')}
+                </ul>
+              </body>
+            </html>
+        `);
+    }
+    catch(ex){
+        next(ex);
     }
 });
 
-Item.beforeSave( item => {
-    if (!item.details){
-        item.details = `${item.name} Details are ${faker.lorem.paragraphs(1)}`;
+app.get('/items/:id', async(req,res,next)=>{
+    try {
+        const items = [await Item.findByPk(req.params.id)];
+        res.send(`
+            <html>
+              <head>
+                <link rel='stylesheet' href='/styles.css' />
+              </head>
+              <body>
+                <h1>${items.map( item => item.name)}</h1>
+                <h3><a href='/items'>Back To Home</a></h3>
+                <ul>
+                  ${items.map( item => `
+                  
+                   
+                    ${item.details}
+                    
+                  
+                  `).join('')}
+                </ul>
+              </body>
+            </html>
+        `);
+    }
+    catch(ex){
+        next(ex);
     }
 });
 
-const syncAndSeed = async()=> {
-    await db.sync({ force: true });
-    await Item.create({ name: 'item 1' });
-    await Item.create({ name: 'item 2' });
-    await Item.create({ name: 'item 3' });
-}
 const init = async()=> {
    try {
     await db.authenticate();
     await syncAndSeed();
-    console.log(await Item.findAll())
+    const port = process.env.PORT || 3000;
+    app.listen(port, ()=> console.log(`listening on port ${port}`));
+   
    } 
    catch(ex) {
     console.log(ex);
