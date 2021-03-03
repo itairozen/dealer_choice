@@ -18,7 +18,7 @@ app.get('/items', async(req,res,next)=>{
                 <h1>Items (${items.length})</h1>
                 <ul>
                   ${items.map( item => `
-                  <li> 
+                  <li>
                     <a href='/items/${item.id}'>
                     ${item.name}
                     </a>
@@ -35,7 +35,19 @@ app.get('/items', async(req,res,next)=>{
 });
 
 app.get('/items/:id', async(req,res,next)=>{
-    try {
+  try {
+      /*here, you're only getting back one item from the database.
+      instead of putting that one item in an array and mapping over it
+      you could access the propertes of the object directly
+      so instead of the html you have below you simply do:
+      <h1>${item.name}</h1>
+      <h3><a href='/items'>Back To Home</a></h3>
+      <p>${item.details} </p>
+
+      you also don't need to have the item.details inside the <ul> </ul> tags.
+      The <ul> </ul> is used for bullet points (it stands for unordered list),
+      whereas <p> </p> is used for text (it stands for paragraph).
+      */
         const items = [await Item.findByPk(req.params.id)];
         res.send(`
             <html>
@@ -47,11 +59,7 @@ app.get('/items/:id', async(req,res,next)=>{
                 <h3><a href='/items'>Back To Home</a></h3>
                 <ul>
                   ${items.map( item => `
-                  
-                   
                     ${item.details}
-                    
-                  
                   `).join('')}
                 </ul>
               </body>
@@ -69,8 +77,7 @@ const init = async()=> {
     await syncAndSeed();
     const port = process.env.PORT || 3000;
     app.listen(port, ()=> console.log(`listening on port ${port}`));
-   
-   } 
+   }
    catch(ex) {
     console.log(ex);
    }
